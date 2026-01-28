@@ -1,1 +1,1 @@
-{"$schema":"https://railway.app/railway.schema.json","build":{"builder":"NIXPACKS"},"deploy":{"startCommand":"php -S 0.0.0.0:8080 -t ."},"nixpacksConfig":{"phases":{"setup":{"aptPkgs":["php-mysql"]}}}} 
+{"$schema":"https://railway.app/railway.schema.json","build":{"builder":"NIXPACKS"},"deploy":{"startCommand":"php -S 0.0.0.0:8080 router.php"},"nixpacksConfig":{"phases":{"setup":{"aptPkgs":["php-mysql"]}}}}

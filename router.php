@@ -1,6 +1,19 @@
 <?php
-// CORS headers for all requests
-header('Access-Control-Allow-Origin: https://buildconnect-ke.vercel.app');
+// Router with configurable CORS and DEV-friendly fallback
+$allowedOriginsEnv = getenv('CORS_ALLOWED_ORIGINS') ?: 'http://localhost:3000,https://buildconnect-ke.vercel.app';
+$allowedOrigins = array_map('trim', explode(',', $allowedOriginsEnv));
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+if ($origin && in_array($origin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: $origin");
+} elseif (getenv('DEV') === 'true') {
+    // Development: allow any origin for convenience
+    header('Access-Control-Allow-Origin: *');
+} else {
+    // Fallback to first allowed origin
+    header('Access-Control-Allow-Origin: ' . $allowedOrigins[0]);
+}
+
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Credentials: true');
@@ -35,12 +48,6 @@ if (file_exists(__DIR__ . $uri . '/index.php')) {
     exit();
 }
 
-// Root request
-if ($uri === '/' || $uri === '') {
-    require __DIR__ . '/index.php';
-    exit();
-}
-
-// 404
+// Nothing matched
 http_response_code(404);
 echo json_encode(['error' => 'Not found']);

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS contractors (
     category VARCHAR(100) NOT NULL,
     location VARCHAR(255) NOT NULL,
     years_of_experience INT NOT NULL,
+    hourly_rate DECIMAL(10, 2) DEFAULT 0.00,
     bio TEXT,
     status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
     rejection_reason TEXT,

@@ -54,20 +54,22 @@ try {
     
     $userId = $db->lastInsertId();
     
-    // If contractor, create contractor profile and handle additional data
+    // If contractor, create contractor profile
     if ($role === 'contractor') {
         $businessName = sanitizeInput($data['business_name'] ?? '');
         $category = sanitizeInput($data['category'] ?? '');
         $location = sanitizeInput($data['location'] ?? '');
         $yearsExperience = intval($data['years_of_experience'] ?? 0);
         $bio = sanitizeInput($data['bio'] ?? '');
+        $hourlyRate = floatval($data['hourly_rate'] ?? 0);
         
         if (empty($businessName) || empty($category) || empty($location) || $yearsExperience <= 0) {
-            jsonResponse(['error' => 'Business details required for contractors'], 400);
+            jsonResponse(['error' => 'Business name, category, location, and years of experience are required for contractors'], 400);
         }
         
-        $stmt = $db->prepare("INSERT INTO contractors (user_id, business_name, category, location, years_of_experience, bio, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')");
-        $stmt->execute([$userId, $businessName, $category, $location, $yearsExperience, $bio]);
+        // Insert contractor profile with hourly_rate
+        $stmt = $db->prepare("INSERT INTO contractors (user_id, business_name, category, location, years_of_experience, bio, hourly_rate, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')");
+        $stmt->execute([$userId, $businessName, $category, $location, $yearsExperience, $bio, $hourlyRate]);
         
         // Create notification for admin
         $stmt = $db->prepare("SELECT id FROM users WHERE role = 'admin'");
@@ -102,5 +104,5 @@ try {
     ], 201);
     
 } catch (PDOException $e) {
-    jsonResponse(['error' => 'Registration failed'], 500);
+    jsonResponse(['error' => 'Registration failed: ' . $e->getMessage()], 500);
 }

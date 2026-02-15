@@ -24,3 +24,6 @@ error_log
 # Temporary files
 *.tmp
 *.temp
+
+# Dependencies
+vendor/

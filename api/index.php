@@ -8,7 +8,8 @@ $allowed_origins = [
 ];
 
 if (in_array(rtrim($origin, '/'), array_map(function ($o) {
-    return rtrim($o, '/'); }, $allowed_origins))) {
+    return rtrim($o, '/');
+}, $allowed_origins))) {
     header("Access-Control-Allow-Origin: " . $origin);
     header("Access-Control-Allow-Credentials: true");
 }
@@ -38,14 +39,17 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 error_log("Received URI: " . $uri);
 $parts = explode('/', trim($uri, '/'));
 
-// Expected parts: [api, resource, id/action, action]
-// e.g. api/auth/login
-// e.g. api/assignments/123/accept
-
-// Index 0 = api
-$resource = $parts[1] ?? '';
-$param1 = $parts[2] ?? null;
-$param2 = $parts[3] ?? null;
+// Handle case where it might be /api/auth/login or just /auth/login
+if (($parts[0] ?? '') === 'api') {
+    $resource = $parts[1] ?? '';
+    $param1 = $parts[2] ?? null;
+    $param2 = $parts[3] ?? null;
+}
+else {
+    $resource = $parts[0] ?? '';
+    $param1 = $parts[1] ?? null;
+    $param2 = $parts[2] ?? null;
+}
 
 // Global route params to be used by included files
 global $routeParams;

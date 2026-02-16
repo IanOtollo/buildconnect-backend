@@ -1,17 +1,27 @@
 <?php
-header("Content-Type: application/json");
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+// CORS Headers - Must be at the absolute top
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $allowed_origins = [
     'https://buildconnect-ke.vercel.app',
+    'https://buildconnect-ke.vercel.app/',
     'http://localhost:3000'
 ];
 
-if (in_array($origin, $allowed_origins)) {
+if (in_array(rtrim($origin, '/'), array_map(function ($o) {
+    return rtrim($o, '/'); }, $allowed_origins))) {
     header("Access-Control-Allow-Origin: " . $origin);
     header("Access-Control-Allow-Credentials: true");
 }
 else {
-    header("Access-Control-Allow-Origin: *");
+    // For local dev or unknown origins, allow but with restricted credentials if needed
+    // However, for preflight to pass with withCredentials, we MUST echoed the origin
+    if ($origin) {
+        header("Access-Control-Allow-Origin: " . $origin);
+        header("Access-Control-Allow-Credentials: true");
+    }
+    else {
+        header("Access-Control-Allow-Origin: *");
+    }
 }
 
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH");
@@ -21,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+header("Content-Type: application/json");
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 error_log("Received URI: " . $uri);

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: buildconnect-backend
+    env: docker
+    plan: free
+    region: ohio
+    branch: main
+    healthCheckPath: /api/index.php
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false

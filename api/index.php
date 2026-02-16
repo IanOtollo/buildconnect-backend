@@ -124,6 +124,11 @@ switch ($resource) {
         break;
 
     default:
-        echo json_encode(['message' => 'BuildConnect API Services Running']);
+        echo json_encode([
+            'message' => 'BuildConnect API Services Running',
+            'debug_uri' => $uri,
+            'debug_parts' => $parts,
+            'server_request_uri' => $_SERVER['REQUEST_URI']
+        ]);
         break;
 }

@@ -20,11 +20,12 @@ $param1 = null;
 $param2 = null;
 
 if (($parts[0] ?? '') === 'api') {
-else {
-    $resource = $parts[0] ?? '';
-    $param1 = $parts[1] ?? null;
-    $param2 = $parts[2] ?? null;
+    array_shift($parts);
 }
+
+$resource = $parts[0] ?? '';
+$param1 = $parts[1] ?? null;
+$param2 = $parts[2] ?? null;
 
 // Global route params to be used by included files
 global $routeParams;

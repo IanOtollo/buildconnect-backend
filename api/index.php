@@ -10,6 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+error_log("Received URI: " . $uri);
 $parts = explode('/', trim($uri, '/'));
 
 // Expected parts: [api, resource, id/action, action]

@@ -14,23 +14,25 @@ if (file_exists(__DIR__ . '/../.env')) {
 /**
  * DB Connection helper
  */
-function getDBConnection() {
+function getDBConnection()
+{
     $host = $_ENV['DB_HOST'] ?? 'localhost';
-    $db   = $_ENV['DB_NAME'] ?? 'buildconnect';
+    $db = $_ENV['DB_NAME'] ?? 'buildconnect';
     $user = $_ENV['DB_USER'] ?? 'root';
     $pass = $_ENV['DB_PASS'] ?? '';
     $charset = 'utf8mb4';
 
     $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
     $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_EMULATE_PREPARES => false,
     ];
 
     try {
         return new PDO($dsn, $user, $pass, $options);
-    } catch (\PDOException $e) {
+    }
+    catch (\PDOException $e) {
         jsonResponse(['error' => 'Database connection failed: ' . $e->getMessage()], 500);
     }
 }
@@ -38,7 +40,8 @@ function getDBConnection() {
 /**
  * JSON Response helper
  */
-function jsonResponse($data, $code = 200) {
+function jsonResponse($data, $code = 200)
+{
     header('Content-Type: application/json');
     http_response_code($code);
     echo json_encode($data);
@@ -48,14 +51,16 @@ function jsonResponse($data, $code = 200) {
 /**
  * Sanitize input
  */
-function sanitizeInput($data) {
+function sanitizeInput($data)
+{
     return htmlspecialchars(strip_tags(trim($data)));
 }
 
 /**
  * Validate required fields
  */
-function validateRequired($data, $fields) {
+function validateRequired($data, $fields)
+{
     foreach ($fields as $field) {
         if (!isset($data[$field]) || empty($data[$field])) {
             return "Field '$field' is required.";
@@ -67,7 +72,8 @@ function validateRequired($data, $fields) {
 /**
  * Token generation
  */
-function generateToken($userId, $role) {
+function generateToken($userId, $role)
+{
     $secret = $_ENV['JWT_SECRET'] ?? 'default_secret_key_change_me';
     $payload = [
         'iss' => 'buildconnect',
@@ -87,20 +93,26 @@ function generateToken($userId, $role) {
 /**
  * Create notification helper
  */
-function createNotification($userId, $title, $message, $type) {
+function createNotification($userId, $title, $message, $type)
+{
     try {
         $db = getDBConnection();
         $stmt = $db->prepare("INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)");
         $stmt->execute([$userId, $title, $message, $type]);
-    } catch (\Exception $e) {
-        // Log error or ignore
+    }
+    catch (\Exception $e) {
+    // Log error or ignore
     }
 }
 
 /**
  * Auth Middleware
  */
-function authenticate() {
+/**
+ * Auth Middleware
+ */
+function requireAuth($allowedRoles = [])
+{
     $headers = getallheaders();
     $authHeader = $headers['Authorization'] ?? '';
 
@@ -110,8 +122,19 @@ function authenticate() {
 
         try {
             $decoded = JWT::decode($token, new Key($secret, 'HS256'));
-            return (array)$decoded->data;
-        } catch (\Exception $e) {
+            $user = (array)$decoded->data;
+
+            // Check role if specified
+            if (!empty($allowedRoles)) {
+                if (!in_array($user['role'], $allowedRoles)) {
+                    jsonResponse(['error' => 'Forbidden: Insufficient permissions'], 403);
+                }
+            }
+
+            return $user;
+
+        }
+        catch (\Exception $e) {
             jsonResponse(['error' => 'Unauthorized: Invalid token'], 401);
         }
     }

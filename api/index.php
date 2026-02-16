@@ -71,23 +71,20 @@ switch ($resource) {
 
     case 'contractors':
         if ($param1 === 'me') {
-            // Determine if 'me' is a file or a param. 
-            // Contractors usually have a profile.php
-            require __DIR__ . '/contractors/profile.php'; // Should check auth for 'me' context?
-            // Actually profile.php expects ?id=...
-            // We might need to modify profile.php or wrapper.
-            // Let's assume for 'me', we fetch user from token inside profile.php or similar?
-            // Actually, contractorsAPI.getMe() calls /contractors/me. 
-            // We need a specific endpoint for that.
-            // I'll create a quick inline handler here if file missing.
+            // Handle /contractors/me
             include_once __DIR__ . '/../config/database.php';
             $user = requireAuth(['contractor']);
-            $_GET['id'] = getContractorIdFromUserId($user['user_id']); // Helper needed?
-        // Let's just create a wrapper or assume profile.php can handle it?
-        // Safer: Point to list.php if no ID, profile.php if ID. 
-        // valid ID is handled below. 'me' is special.
-        // Let's create api/contractors/me.php later if needed.
-        // For now, let's try to include generic logic.
+            $db = getDBConnection();
+            $stmt = $db->prepare("SELECT id FROM contractors WHERE user_id = ?");
+            $stmt->execute([$user['user_id']]);
+            $c = $stmt->fetch();
+            if ($c) {
+                $_GET['id'] = $c['id'];
+                require __DIR__ . '/contractors/profile.php';
+            }
+            else {
+                jsonResponse(['error' => 'Contractor profile not found'], 404);
+            }
         }
         elseif (is_numeric($param1)) {
             $_GET['id'] = $param1;
@@ -105,10 +102,7 @@ switch ($resource) {
             require __DIR__ . '/assignments/update.php';
         }
         elseif ($param1 === 'pending') {
-        // assignments/pending
-        // We need a file for this. Assuming requests/list.php with status?
-        // Or maybe create assignments/list.php
-        // For now, assume requests/list.php handles it or fail.
+            require __DIR__ . '/assignments/pending.php';
         }
         break;
 

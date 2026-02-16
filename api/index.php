@@ -112,6 +112,13 @@ switch ($resource) {
             require __DIR__ . '/ai/estimate.php';
         break;
 
+    case 'admin':
+        if ($param1 === 'dashboard')
+            require __DIR__ . '/admin/dashboard.php';
+        elseif ($param1 === 'verify')
+            require __DIR__ . '/admin/verify.php';
+        break;
+
     case 'payments':
         if ($param1 === 'stkpush')
             require __DIR__ . '/payments/stkpush.php';

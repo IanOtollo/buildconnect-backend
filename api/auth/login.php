@@ -31,11 +31,15 @@ try {
     $user = $stmt->fetch();
 
     if (!$user) {
+        error_log("LOGIN_DEBUG: Email '$email' not found.");
         jsonResponse(['error' => 'User not found in database'], 401);
     }
 
     // Verify password
-    if (!password_verify($password, $user['password'])) {
+    $verify = password_verify($password, $user['password']);
+    error_log("LOGIN_DEBUG: Password verify for '$email': " . ($verify ? 'SUCCESS' : 'FAILURE'));
+
+    if (!$verify) {
         jsonResponse(['error' => 'Incorrect password provided'], 401);
     }
 

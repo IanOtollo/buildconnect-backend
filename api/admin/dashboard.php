@@ -12,7 +12,7 @@ $user = requireAuth(['admin']);
 
 try {
     $db = getDBConnection();
-    
+
     // Get pending contractors
     $stmt = $db->prepare("
         SELECT c.*, u.full_name, u.email, u.phone 
@@ -23,14 +23,21 @@ try {
     ");
     $stmt->execute();
     $pendingContractors = $stmt->fetchAll();
-    
-    // Get all contractors with documents
+
+    // Get all contractors with documents and structure nested user
     foreach ($pendingContractors as &$contractor) {
         $stmt = $db->prepare("SELECT * FROM contractor_documents WHERE contractor_id = ?");
         $stmt->execute([$contractor['id']]);
         $contractor['documents'] = $stmt->fetchAll();
+
+        // Nest user data to match frontend expectation
+        $contractor['user'] = [
+            'full_name' => $contractor['full_name'],
+            'email' => $contractor['email'],
+            'phone' => $contractor['phone']
+        ];
     }
-    
+
     // Get stats
     $stmt = $db->query("SELECT 
         (SELECT COUNT(*) FROM users WHERE role = 'client') as total_clients,
@@ -40,12 +47,14 @@ try {
         (SELECT COUNT(*) FROM service_requests WHERE status = 'completed') as completed_requests
     ");
     $stats = $stmt->fetch();
-    
+
     jsonResponse([
         'pending_contractors' => $pendingContractors,
         'stats' => $stats
     ]);
-    
-} catch (PDOException $e) {
+
+
+}
+catch (PDOException $e) {
     jsonResponse(['error' => 'Failed to fetch dashboard data'], 500);
 }

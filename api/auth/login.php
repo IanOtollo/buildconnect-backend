@@ -24,27 +24,27 @@ if (!$email) {
 
 try {
     $db = getDBConnection();
-    
+
     // Get user
     $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
-    
+
     if (!$user) {
-        jsonResponse(['error' => 'Invalid credentials'], 401);
+        jsonResponse(['error' => 'User not found in database'], 401);
     }
-    
+
     // Verify password
     if (!password_verify($password, $user['password'])) {
-        jsonResponse(['error' => 'Invalid credentials'], 401);
+        jsonResponse(['error' => 'Incorrect password provided'], 401);
     }
-    
+
     // If contractor, check approval status
     if ($user['role'] === 'contractor') {
         $stmt = $db->prepare("SELECT status, rejection_reason FROM contractors WHERE user_id = ?");
         $stmt->execute([$user['id']]);
         $contractor = $stmt->fetch();
-        
+
         if ($contractor) {
             if ($contractor['status'] === 'pending') {
                 jsonResponse([
@@ -52,7 +52,7 @@ try {
                     'status' => 'pending'
                 ], 403);
             }
-            
+
             if ($contractor['status'] === 'rejected') {
                 jsonResponse([
                     'error' => 'Your application was rejected',
@@ -62,10 +62,10 @@ try {
             }
         }
     }
-    
+
     // Generate token
     $token = generateToken($user['id'], $user['role']);
-    
+
     jsonResponse([
         'message' => 'Login successful',
         'token' => $token,
@@ -77,7 +77,9 @@ try {
             'role' => $user['role']
         ]
     ]);
-    
-} catch (PDOException $e) {
+
+
+}
+catch (PDOException $e) {
     jsonResponse(['error' => 'Login failed'], 500);
 }

@@ -39,6 +39,9 @@ switch ($resource) {
             require __DIR__ . '/auth/login.php';
         elseif ($param1 === 'register')
             require __DIR__ . '/auth/register.php';
+        elseif ($param1 === 'logout') {
+            jsonResponse(['message' => 'Logged out successfully']);
+        }
         elseif ($param1 === 'me') {
             // Check if me.php exists, else implement simple response
             if (file_exists(__DIR__ . '/auth/me.php'))

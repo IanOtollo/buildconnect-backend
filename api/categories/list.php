@@ -10,8 +10,8 @@ if ($method !== 'GET') {
 try {
     $db = getDBConnection();
 
-    // Get all categories
-    $stmt = $db->query("SELECT * FROM categories ORDER BY name ASC");
+    // Get distinct categories to avoid duplicates
+    $stmt = $db->query("SELECT name, MIN(id) as id, MIN(description) as description FROM categories GROUP BY name ORDER BY name ASC");
     $categories = $stmt->fetchAll();
 
     // Get contractor count for each category and map icons

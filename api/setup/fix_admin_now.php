@@ -8,7 +8,8 @@ try {
 
     $email = 'admin@buildconnect.com';
     $password = 'admin123';
-    $hash = password_hash($password, PASSWORD_DEFAULT);
+    // $hash = password_hash($password, PASSWORD_DEFAULT); // Bypassing as requested
+    $hash = $password;
 
     // 1. Delete existing if any to be absolutely sure
     $stmt = $db->prepare("DELETE FROM users WHERE email = ?");

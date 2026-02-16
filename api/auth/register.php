@@ -9,6 +9,11 @@ if ($method !== 'POST') {
 
 $data = json_decode(file_get_contents('php://input'), true);
 
+// If data is empty, check $_POST (useful for multipart/form-data with file uploads)
+if (empty($data)) {
+    $data = $_POST;
+}
+
 // Validate required fields
 $error = validateRequired($data, ['email', 'password', 'full_name', 'phone', 'role']);
 if ($error) {
@@ -37,23 +42,23 @@ if (strlen($password) < 6) {
 
 try {
     $db = getDBConnection();
-    
+
     // Check if email exists
     $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
         jsonResponse(['error' => 'Email already registered'], 400);
     }
-    
+
     // Hash password
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-    
+
     // Insert user
     $stmt = $db->prepare("INSERT INTO users (email, password, role, full_name, phone) VALUES (?, ?, ?, ?, ?)");
     $stmt->execute([$email, $hashedPassword, $role, $full_name, $phone]);
-    
+
     $userId = $db->lastInsertId();
-    
+
     // If contractor, create contractor profile
     if ($role === 'contractor') {
         $businessName = sanitizeInput($data['business_name'] ?? '');
@@ -62,20 +67,20 @@ try {
         $yearsExperience = intval($data['years_of_experience'] ?? 0);
         $bio = sanitizeInput($data['bio'] ?? '');
         $hourlyRate = floatval($data['hourly_rate'] ?? 0);
-        
+
         if (empty($businessName) || empty($category) || empty($location) || $yearsExperience <= 0) {
             jsonResponse(['error' => 'Business name, category, location, and years of experience are required for contractors'], 400);
         }
-        
+
         // Insert contractor profile with hourly_rate
         $stmt = $db->prepare("INSERT INTO contractors (user_id, business_name, category, location, years_of_experience, bio, hourly_rate, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')");
         $stmt->execute([$userId, $businessName, $category, $location, $yearsExperience, $bio, $hourlyRate]);
-        
+
         // Create notification for admin
         $stmt = $db->prepare("SELECT id FROM users WHERE role = 'admin'");
         $stmt->execute();
         $admins = $stmt->fetchAll();
-        
+
         foreach ($admins as $admin) {
             createNotification(
                 $admin['id'],
@@ -85,14 +90,14 @@ try {
             );
         }
     }
-    
+
     // Generate token
     $token = generateToken($userId, $role);
-    
+
     jsonResponse([
-        'message' => $role === 'contractor' 
-            ? 'Application submitted successfully. Awaiting admin approval.' 
-            : 'Registration successful',
+        'message' => $role === 'contractor'
+        ? 'Application submitted successfully. Awaiting admin approval.'
+        : 'Registration successful',
         'token' => $token,
         'user' => [
             'id' => $userId,
@@ -102,7 +107,9 @@ try {
             'role' => $role
         ]
     ], 201);
-    
-} catch (PDOException $e) {
+
+
+}
+catch (PDOException $e) {
     jsonResponse(['error' => 'Registration failed: ' . $e->getMessage()], 500);
 }

@@ -34,7 +34,7 @@ try {
 
     // Create service request with new fields
     $stmt = $db->prepare("INSERT INTO service_requests (client_id, contractor_id, category, title, description, location, budget, estimated_duration, urgency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
-    $stmt->execute([$user['user_id'], $contractorId, $category, $title, $description, $location, $budget, $duration, $urgency]);
+    $stmt->execute([$user['userId'], $contractorId, $category, $title, $description, $location, $budget, $duration, $urgency]);
 
     $requestId = $db->lastInsertId();
 

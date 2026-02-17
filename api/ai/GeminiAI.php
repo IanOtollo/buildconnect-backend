@@ -27,6 +27,9 @@ class GeminiAI
                         ['text' => $prompt]
                     ]
                 ]
+            ],
+            'generationConfig' => [
+                'response_mime_type' => 'application/json'
             ]
         ];
 
@@ -43,11 +46,18 @@ class GeminiAI
         curl_close($ch);
 
         if ($httpCode !== 200) {
+            error_log("GEMINI_ERROR: HTTP $httpCode - Response: $response");
             return ['error' => 'Gemini API call failed', 'details' => $response];
         }
 
         $result = json_decode($response, true);
-        return $result['candidates'][0]['content']['parts'][0]['text'] ?? ['error' => 'Unexpected Gemini response format'];
+        $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+        if (!$text) {
+            return ['error' => 'Unexpected Gemini response format'];
+        }
+
+        return $text;
     }
 
     /**
@@ -59,13 +69,15 @@ class GeminiAI
         Description: $description
         Location: $location
         
-        Please provide:
-        1. Estimated total cost range (in KES)
-        2. Break down of major costs (Materials, Labor, Permits)
-        3. Estimated timeline
-        4. Key considerations for this location
-        
-        Format the response in professional markdown.";
+        Return ONLY a JSON object with the following structure:
+        {
+            \"total_cost\": \"approximate total in KES (e.g. KES 5,000,000)\",
+            \"materials\": [
+                {\"item\": \"material name\", \"quantity\": \"amount\", \"estimated_cost\": \"cost in KES\"}
+            ],
+            \"timeline\": \"estimated duration\",
+            \"recommendations\": [\"list of specific advice for this location or project\"]
+        }";
 
         return $this->generateResponse($prompt);
     }

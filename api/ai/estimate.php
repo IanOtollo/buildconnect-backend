@@ -21,10 +21,18 @@ $location = sanitizeInput($data['location']);
 
 try {
     $ai = new GeminiAI();
-    $estimate = $ai->getProjectEstimate($description, $location);
+    $aiResponse = $ai->getProjectEstimate($description, $location);
 
-    if (isset($estimate['error'])) {
-        jsonResponse($estimate, 500);
+    if (isset($aiResponse['error'])) {
+        jsonResponse($aiResponse, 500);
+    }
+
+    // Parse the JSON string from AI
+    $estimate = json_decode($aiResponse, true);
+
+    if (!$estimate) {
+        error_log("AI_PARSE_ERROR: Failed to parse JSON from Gemini. Raw: " . $aiResponse);
+        jsonResponse(['error' => 'AI returned malformed data', 'debug' => $aiResponse], 500);
     }
 
     jsonResponse([
@@ -32,7 +40,6 @@ try {
     ]);
 
 
-}
-catch (Exception $e) {
+} catch (Exception $e) {
     jsonResponse(['error' => 'AI processing failed: ' . $e->getMessage()], 500);
 }

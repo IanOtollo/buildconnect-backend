@@ -11,23 +11,27 @@ try {
     $db = getDBConnection();
     echo "✅ Connected to database.\n\n";
 
+    // Get existing columns
+    $stmt = $db->query("DESCRIBE service_requests");
+    $existingColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
     $migrations = [
-        "ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS urgency ENUM('low', 'medium', 'high') DEFAULT 'medium' AFTER location",
-        "ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS budget DECIMAL(10, 2) DEFAULT 0.00 AFTER urgency",
-        "ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS estimated_duration VARCHAR(100) AFTER budget"
+        'urgency' => "ALTER TABLE service_requests ADD COLUMN urgency ENUM('low', 'medium', 'high') DEFAULT 'medium' AFTER location",
+        'budget' => "ALTER TABLE service_requests ADD COLUMN budget DECIMAL(10, 2) DEFAULT 0.00 AFTER urgency",
+        'estimated_duration' => "ALTER TABLE service_requests ADD COLUMN estimated_duration VARCHAR(100) AFTER budget"
     ];
 
-    foreach ($migrations as $sql) {
+    foreach ($migrations as $column => $sql) {
+        if (in_array($column, $existingColumns)) {
+            echo "ℹ️  Column '$column' already exists, skipping.\n";
+            continue;
+        }
+
         try {
             $db->exec($sql);
-            echo "✅ Successfully executed: $sql\n";
+            echo "✅ Successfully added column: $column\n";
         } catch (PDOException $e) {
-            // Some MySQL versions don't support ADD COLUMN IF NOT EXISTS
-            if (strpos($e->getMessage(), 'Duplicate column name') !== false) {
-                echo "ℹ️  Column already exists, skipping: $sql\n";
-            } else {
-                echo "⚠️  Migration failed: " . $e->getMessage() . "\n";
-            }
+            echo "⚠️  Migration failed for '$column': " . $e->getMessage() . "\n";
         }
     }
 

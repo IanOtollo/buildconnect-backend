@@ -17,6 +17,7 @@ if (empty($data)) {
 // Validate required fields
 $error = validateRequired($data, ['email', 'password', 'full_name', 'phone', 'role']);
 if ($error) {
+    error_log("REGISTER_DEBUG: Validation failed - " . $error . " | Data: " . json_encode($data));
     jsonResponse(['error' => $error], 400);
 }
 

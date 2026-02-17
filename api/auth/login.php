@@ -49,6 +49,7 @@ try {
     }
 
     if (!isset($is_plain_match) || (!$is_plain_match && !($is_hash_valid ?? false))) {
+        error_log("LOGIN_DEBUG: Password mismatch for email '$email'.");
         jsonResponse([
             'error' => 'Incorrect password provided',
             'debug' => [

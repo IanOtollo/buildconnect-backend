@@ -23,12 +23,11 @@ try {
             WHERE sr.client_id = ?
             ORDER BY sr.created_at DESC
         ");
-        $stmt->execute([$user['user_id']]);
-    }
-    else if ($user['role'] === 'contractor') {
+        $stmt->execute([$user['userId']]);
+    } else if ($user['role'] === 'contractor') {
         // Get contractor ID
         $stmt = $db->prepare("SELECT id FROM contractors WHERE user_id = ?");
-        $stmt->execute([$user['user_id']]);
+        $stmt->execute([$user['userId']]);
         $contractor = $stmt->fetch();
 
         if (!$contractor) {
@@ -51,7 +50,6 @@ try {
     jsonResponse($requests);
 
 
-}
-catch (PDOException $e) {
+} catch (PDOException $e) {
     jsonResponse(['error' => 'Failed to fetch service requests'], 500);
 }

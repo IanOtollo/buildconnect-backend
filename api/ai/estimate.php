@@ -23,7 +23,7 @@ try {
     $ai = new GeminiAI();
     $aiResponse = $ai->getProjectEstimate($description, $location);
 
-    if (isset($aiResponse['error'])) {
+    if (is_array($aiResponse) && isset($aiResponse['error'])) {
         jsonResponse($aiResponse, 500);
     }
 

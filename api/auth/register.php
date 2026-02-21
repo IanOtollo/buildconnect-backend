@@ -103,6 +103,16 @@ try {
         // Insert contractor profile as approved
         $stmt = $db->prepare("INSERT INTO contractors (user_id, business_name, category, location, years_of_experience, bio, hourly_rate, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$userId, $businessName, $category, $location, $yearsExperience, $bio, $hourlyRate, $status]);
+
+        // Create welcome notification for approved contractor
+        if ($status === 'approved') {
+            createNotification(
+                $userId,
+                'Application Approved',
+                "Welcome to BuildConnect! Your professional profile has been verified and approved by our AI system. You can now start receiving project assignments.",
+                'system'
+            );
+        }
     }
 
     // Generate token

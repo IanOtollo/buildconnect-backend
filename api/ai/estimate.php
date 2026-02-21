@@ -3,7 +3,7 @@ require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/GeminiAI.php';
 
 // Auth check
-$user = authenticate();
+$user = requireAuth(['client']);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(['error' => 'Method not allowed'], 405);

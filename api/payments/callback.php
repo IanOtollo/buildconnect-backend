@@ -42,21 +42,34 @@ try {
             $updateStmt = $db->prepare("UPDATE transactions SET status = 'completed', metadata = ? WHERE id = ?");
             $updateStmt->execute([$callbackData, $transaction['id']]);
 
-            // Update user balance
-            $balanceStmt = $db->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
-            $balanceStmt->execute([$transaction['amount'], $transaction['user_id']]);
+            if ($transaction['transaction_type'] === 'escrow_payment' && $transaction['service_request_id']) {
+                // Update service request status
+                $srStmt = $db->prepare("UPDATE service_requests SET status = 'paid_escrow' WHERE id = ?");
+                $srStmt->execute([$transaction['service_request_id']]);
 
-            // Create notification
-            createNotification(
-                $transaction['user_id'],
-                "Deposit Successful",
-                "Your deposit of KES " . number_format($transaction['amount'], 2) . " has been credited to your wallet.",
-                "payment"
-            );
+                // Create notification
+                createNotification(
+                    $transaction['user_id'],
+                    "Escrow Funded",
+                    "Your escrow payment of KES " . number_format($transaction['amount'], 2) . " has been securely deposited for your project.",
+                    "payment"
+                );
+            } else {
+                // Update user balance for general deposit
+                $balanceStmt = $db->prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?");
+                $balanceStmt->execute([$transaction['amount'], $transaction['user_id']]);
+
+                // Create notification
+                createNotification(
+                    $transaction['user_id'],
+                    "Deposit Successful",
+                    "Your deposit of KES " . number_format($transaction['amount'], 2) . " has been credited to your wallet.",
+                    "payment"
+                );
+            }
 
             $db->commit();
-        }
-        else {
+        } else {
             // Failed
             $updateStmt = $db->prepare("UPDATE transactions SET status = 'failed', description = ? WHERE id = ?");
             $updateStmt->execute([$resultDesc, $transaction['id']]);
@@ -64,8 +77,7 @@ try {
     }
 
     echo json_encode(["ResultCode" => 0, "ResultDesc" => "Accepted"]);
-}
-catch (Exception $e) {
+} catch (Exception $e) {
     if ($db->inTransaction()) {
         $db->rollBack();
     }

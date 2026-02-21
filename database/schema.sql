@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS service_requests (
     budget DECIMAL(10, 2) DEFAULT 0.00,
     estimated_duration VARCHAR(100),
     file_path VARCHAR(500),
+    status ENUM('pending_deposit', 'pending_assignment', 'assigned', 'in_progress', 'pending_completion', 'completed', 'cancelled', 'paid_escrow') DEFAULT 'pending_deposit',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -116,3 +117,23 @@ INSERT INTO categories (name, description) VALUES
 -- Insert default admin user (password: admin123)
 INSERT IGNORE INTO users (email, password, role, full_name, phone) VALUES
 ('admin@buildconnect.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 'System Admin', '+254700000000');
+
+-- Transactions
+CREATE TABLE IF NOT EXISTS transactions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    service_request_id INT,
+    amount DECIMAL(10, 2) NOT NULL,
+    transaction_type ENUM('deposit', 'withdrawal', 'escrow_payment', 'escrow_release') NOT NULL,
+    status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+    reference_number VARCHAR(100),
+    description TEXT,
+    metadata JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_request_id) REFERENCES service_requests(id) ON DELETE SET NULL,
+    INDEX idx_user (user_id),
+    INDEX idx_reference (reference_number),
+    INDEX idx_service_request (service_request_id)
+);

@@ -18,8 +18,9 @@ if ($error) {
 
 $phone = sanitizeInput($data['phone']);
 $amount = floatval($data['amount']);
+$serviceRequestId = isset($data['service_request_id']) ? intval($data['service_request_id']) : null;
 $reference = 'BuildConnect_' . time();
-$description = 'Payment for BuildConnect service';
+$description = $serviceRequestId ? 'Escrow Payment for Request #' . $serviceRequestId : 'Payment for BuildConnect service';
 
 try {
     $mpesa = new MpesaService();
@@ -27,15 +28,15 @@ try {
 
     if (isset($result['ResponseCode']) && $result['ResponseCode'] === '0') {
         $db = getDBConnection();
-        $stmt = $db->prepare("INSERT INTO transactions (user_id, amount, transaction_type, status, reference_number, description) VALUES (?, ?, 'deposit', 'pending', ?, 'M-Pesa Wallet Deposit')");
-        $stmt->execute([$user['id'], $amount, $result['CheckoutRequestID']]);
+        $transactionType = $serviceRequestId ? 'escrow_payment' : 'deposit';
+        $stmt = $db->prepare("INSERT INTO transactions (user_id, service_request_id, amount, transaction_type, status, reference_number, description) VALUES (?, ?, ?, ?, 'pending', ?, ?)");
+        $stmt->execute([$user['id'], $serviceRequestId, $amount, $transactionType, $result['CheckoutRequestID'], $description]);
 
         jsonResponse([
             'message' => 'STK Push initiated successfully. Please check your phone.',
             'checkout_id' => $result['CheckoutRequestID']
         ]);
-    }
-    else {
+    } else {
         jsonResponse([
             'error' => 'Mpesa request failed',
             'details' => $result
@@ -43,7 +44,6 @@ try {
     }
 
 
-}
-catch (Exception $e) {
+} catch (Exception $e) {
     jsonResponse(['error' => 'Mpesa integration failed: ' . $e->getMessage()], 500);
 }

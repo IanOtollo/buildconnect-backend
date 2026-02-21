@@ -81,4 +81,23 @@ class GeminiAI
 
         return $this->generateResponse($prompt);
     }
+
+    /**
+     * Evaluate a contractor based on profile details
+     */
+    public function evaluateContractor($details)
+    {
+        $prompt = "You are an AI tasked with evaluating a contractor's suitability for a construction platform based on their profile details.
+        Here are the details provided by the contractor:
+        $details
+        
+        Determine if this contractor appears legitimate, qualified, and viable to provide services on the platform.
+        Return ONLY a JSON object with the following structure:
+        {
+            \"status\": \"approved\" or \"rejected\",
+            \"reason\": \"A brief explanation for the decision\"
+        }";
+
+        return $this->generateResponse($prompt);
+    }
 }

@@ -73,23 +73,36 @@ try {
             jsonResponse(['error' => 'Business name, category, location, and years of experience are required for contractors'], 400);
         }
 
-        // Insert contractor profile with hourly_rate
-        $stmt = $db->prepare("INSERT INTO contractors (user_id, business_name, category, location, years_of_experience, bio, hourly_rate, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')");
-        $stmt->execute([$userId, $businessName, $category, $location, $yearsExperience, $bio, $hourlyRate]);
+        // Use AI to evaluate contractor
+        require_once __DIR__ . '/../ai/GeminiAI.php';
+        $ai = new GeminiAI();
+        $details = "Name: $full_name\nBusiness Name: $businessName\nCategory: $category\nLocation: $location\nYears of Experience: $yearsExperience\nBio: $bio\nFiles Uploaded: ID, KRA PIN, Certificate, Business Permit";
 
-        // Create notification for admin
-        $stmt = $db->prepare("SELECT id FROM users WHERE role = 'admin'");
-        $stmt->execute();
-        $admins = $stmt->fetchAll();
+        $aiResponse = $ai->evaluateContractor($details);
+        $status = 'pending';
+        $reason = 'AI evaluation failed';
 
-        foreach ($admins as $admin) {
-            createNotification(
-                $admin['id'],
-                'New Contractor Application',
-                "$businessName has applied to become a contractor",
-                'contractor_application'
-            );
+        if (!is_array($aiResponse)) {
+            $evaluation = json_decode($aiResponse, true);
+            if ($evaluation && isset($evaluation['status'])) {
+                $status = $evaluation['status'];
+                $reason = $evaluation['reason'] ?? '';
+            }
         }
+
+        if (!in_array($status, ['approved', 'rejected'])) {
+            $status = 'rejected';
+        }
+
+        if ($status === 'rejected') {
+            // Delete the user we just created to rollback
+            $db->prepare("DELETE FROM users WHERE id = ?")->execute([$userId]);
+            jsonResponse(['error' => 'Application rejected by AI system. Reason: ' . $reason], 400);
+        }
+
+        // Insert contractor profile as approved
+        $stmt = $db->prepare("INSERT INTO contractors (user_id, business_name, category, location, years_of_experience, bio, hourly_rate, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $businessName, $category, $location, $yearsExperience, $bio, $hourlyRate, $status]);
     }
 
     // Generate token
@@ -97,8 +110,8 @@ try {
 
     jsonResponse([
         'message' => $role === 'contractor'
-        ? 'Application submitted successfully. Awaiting admin approval.'
-        : 'Registration successful',
+            ? 'Application approved successfully by AI system.'
+            : 'Registration successful',
         'token' => $token,
         'user' => [
             'id' => $userId,
@@ -110,7 +123,6 @@ try {
     ], 201);
 
 
-}
-catch (PDOException $e) {
+} catch (PDOException $e) {
     jsonResponse(['error' => 'Registration failed: ' . $e->getMessage()], 500);
 }
